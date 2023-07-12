@@ -1,6 +1,12 @@
 import streamlit as st
 import datetime
-import pymongo
+from pymongo import MongoClient
+from moviepy.editor import VideoFileClip
+
+@st.experimental_singleton()
+def init_connection():
+    return MongoClient("mongodb+srv://st.secrets.db_username:st.secrets.\
+        db_pswd@st.secrets.cluster_name.5ygnbeg.mongodb.net/?retryWrites=true&w=majority")
 
 st.button('Start Session')
 

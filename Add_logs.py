@@ -2,6 +2,7 @@ import streamlit as st
 from datetime import datetime
 from pymongo import MongoClient
 from moviepy.editor import VideoFileClip
+from config import fault_options
 
 @st.cache_resource()
 def init_connection():
@@ -10,7 +11,12 @@ def init_connection():
 client = init_connection()
 db = client.missions
 
-col1, col2 = st.columns(2)
+#Create containers
+mission_container = st.container()
+col1, col2 = st.columns(spec=[.6, .4])
+upload_container = st.container()
+
+mission_name = None
 
 if 'fault_type' not in st.session_state:
     st.session_state.fault_type = ' '
@@ -37,7 +43,8 @@ css = r'''
 '''
 st.markdown(css, unsafe_allow_html=True)
 
-with col1:
+with mission_container:
+    st.subheader('1. Set Mission Description')
     with st.form(key = 'mission_set'):
         st.radio('Robot unit',['3.3','4.1','4.2','4.3'])
         st.markdown('Type in mission name/description. Should be done in snake case, and cannot\
@@ -47,7 +54,12 @@ with col1:
 
 
 #Entry addition
-with col2:
+with col1:
+    st.subheader('2. Create Entries')
+    disabled = False
+    if mission_name is None:
+        disabled = True
+
     fault_time = ''
 
     if st.button('Get Time'):
@@ -56,21 +68,23 @@ with col2:
 
     with st.form(key = 'log_entry', clear_on_submit=True):
         fault_time = st.text_input('Fault Time', value = fault_time)
-        fault_type = st.text_input('Fault Type', key = 'fault_type')
+        fault_type = st.selectbox('Fault Type', fault_options)
         fault_description = st.text_input('Description of fault and what led up to it.', \
                                                     key = 'fault_description')
-        submit_btn = st.form_submit_button('Add') #, on_click= write_to_db(mission_name,\
+        submit_btn = st.form_submit_button('Add', disabled=disabled) #, on_click= write_to_db(mission_name,\
                                                             #              fault_time))
         if submit_btn:
             doc = {"fault_type": fault_type, "fault_description": fault_description, \
                     "fault_time": fault_time}
             db[mission_name].insert_one(doc)
 
+with col2:
+    pass 
+
 if mission_name != "":
     pass
 
-if st.file_uploader('Upload video'):
-    pass
-
-if st.button('Create clips'):
-    pass
+with upload_container:
+    st.subheader('3. Upload Video')
+    st.file_uploader('')
+    st.button('Create clips')

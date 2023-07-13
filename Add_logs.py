@@ -16,7 +16,7 @@ mission_container = st.container()
 col1, col2 = st.columns(spec=[.6, .4])
 upload_container = st.container()
 
-mission_name = None
+mission_name = ""
 
 if 'fault_type' not in st.session_state:
     st.session_state.fault_type = ' '
@@ -57,7 +57,7 @@ with mission_container:
 with col1:
     st.subheader('2. Create Entries')
     disabled = False
-    if mission_name is None:
+    if mission_name == "":
         disabled = True
 
     fault_time = ''
@@ -80,9 +80,6 @@ with col1:
 
 with col2:
     pass 
-
-if mission_name != "":
-    pass
 
 with upload_container:
     st.subheader('3. Upload Video')

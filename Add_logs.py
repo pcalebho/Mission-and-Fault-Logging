@@ -2,7 +2,7 @@ import streamlit as st
 import datetime
 import pandas as pd
 from pymongo import MongoClient
-from pymongo.errors import OperationFailure
+from pymongo.errors import CollectionInvalid
 from moviepy.editor import VideoFileClip
 from config import fault_options
 from streamlit import session_state as ss
@@ -18,7 +18,7 @@ db = client.missions
 def preview_db(collection):
     try:
         db.validate_collection(collection)  # Try to validate a collection
-    except OperationFailure:  # If the collection doesn't exist
+    except CollectionInvalid:  # If the collection doesn't exist
         return None
 
     list = {
@@ -35,6 +35,7 @@ def preview_db(collection):
 
     df = pd.DataFrame(list)
     df = df.sort_values(by='Datetime',ascending=False)
+    df
     return df
         
 
@@ -115,12 +116,11 @@ with col1:
 
 with col2:
     st.subheader('Entries')
-    if ss.mission_name != '':
-        preview_table = preview_db(ss.mission)
-        if preview_table is not None:
-            st.table(preview_table)
-        else:
-            st.write('No entries found')
+    preview_table = preview_db(ss.mission)
+    if preview_table is not None:
+        st.table(preview_table)
+    else:
+        st.write('No entries found')
 
 with upload_container:
     st.subheader('3. Upload Video')

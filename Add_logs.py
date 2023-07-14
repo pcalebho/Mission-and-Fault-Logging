@@ -2,7 +2,7 @@ import streamlit as st
 import datetime
 import pandas as pd
 from pymongo import MongoClient
-from pymongo.errors import CollectionInvalid
+from pymongo.errors import CollectionInvalid, OperationFailure
 from moviepy.editor import VideoFileClip
 from config import fault_options
 from streamlit import session_state as ss
@@ -18,7 +18,7 @@ db = client.missions
 def preview_db(collection):
     try:
         db.validate_collection(collection)  # Try to validate a collection
-    except CollectionInvalid:  # If the collection doesn't exist
+    except OperationFailure:  # If the collection doesn't exist
         return None
 
     list = {

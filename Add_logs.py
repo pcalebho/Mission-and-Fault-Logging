@@ -27,7 +27,7 @@ if 'date' not in ss:
     ss.date = datetime.datetime.now().date()
 
 if 'time' not in ss:
-    ss.time = datetime.datetime.now().time()
+    ss.time = datetime.datetime.now().time().strftime('%H:%M:%S')
 
 
 def write_to_db(collection, time, type = None, description = None):
@@ -72,19 +72,19 @@ with col1:
     str_time = ''
     if st.button('Get datetime', key = 'get_time_btn'):
         raw_time = datetime.datetime.now()
-        ss.time = raw_time.time()
+        ss.time = raw_time.time().strftime('%H:%M:%S')
         ss.date = raw_time.date()
 
     
     with st.form(key = 'log_entry', clear_on_submit=True):
         date = st.date_input('Date', key = 'date', value = ss.date)
-        time = st.time_input('Fault Time', key = 'time', value= ss.time)
+        time = st.text_input('Time', key = 'time', value= ss.time, max_chars=8, help= 'format (HH\:MM\:SS)')
         type = st.selectbox('Fault Type', options=fault_options, key = 'fault_type')
         description = st.text_input('Description of fault and what led up to it.')
         submitted = st.form_submit_button('Add', disabled=disabled) 
 
         if submitted:
-            doc = {"fault_type": type, "fault_description": description, "fault_time": str(ss.time), "fault_date": str(ss.date)}
+            doc = {"fault_type": type, "fault_description": description, "fault_time": ss.time, "fault_date": str(ss.date)}
             db[mission_name].insert_one(doc)
 
 with col2:

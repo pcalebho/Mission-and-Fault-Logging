@@ -30,17 +30,6 @@ if 'time' not in ss:
     ss.time = datetime.datetime.now().time().strftime('%H:%M:%S')
 
 
-def write_to_db(collection, time, type = None, description = None):
-    if type is None and description is None:
-        output_type = st.session_state.fault_type
-        output_description = st.session_state.fault_description
-    else:
-        output_type = type
-        output_description = description
-    document = {"fault_type": output_type, "fault_description": output_description, \
-                    "fault_time": time}
-    db[collection].insert_one(document)
-
 css = r'''
     <style>
         [data-testid="stForm"] {border: 0px}
@@ -84,7 +73,7 @@ with col1:
         submitted = st.form_submit_button('Add', disabled=disabled) 
 
         if submitted:
-            doc = {"fault_type": type, "fault_description": description, "fault_time": ss.time, "fault_date": str(ss.date)}
+            doc = {"type": type, "description": description, "time": ss.time, "date": str(ss.date)}
             db[mission_name].insert_one(doc)
 
 with col2:

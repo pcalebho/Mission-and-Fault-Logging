@@ -8,6 +8,7 @@ fault_options = (
     'MB1 Jam',
     'EB Jam',
     'Case dropped',
-    'Fallen Case'
+    'Fallen Case',
+    'Other'
 )
 

@@ -66,6 +66,7 @@ with col1:
 
     
     with st.form(key = 'log_entry', clear_on_submit=True):
+        exception = st.radio(label='Exception/Non-exception Fault', options=('Exception', 'Non-exception'))        
         date = st.date_input('Date', key = 'date', value = ss.date)
         time = st.text_input('Time', key = 'time', value= ss.time, max_chars=8, help= 'format (HH\:MM\:SS)')
         type = st.selectbox('Fault Type', options=fault_options, key = 'fault_type')
@@ -73,7 +74,7 @@ with col1:
         submitted = st.form_submit_button('Add', disabled=disabled) 
 
         if submitted:
-            doc = {"type": type, "description": description, "time": ss.time, "date": str(ss.date)}
+            doc = {"exception": exception, "type": type, "description": description, "time": ss.time, "date": str(ss.date)}
             db[mission_name].insert_one(doc)
 
 with col2:

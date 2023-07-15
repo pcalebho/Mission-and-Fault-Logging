@@ -2,7 +2,7 @@ import streamlit as st
 import datetime
 import pandas as pd
 from pymongo import MongoClient
-from pymongo.errors import CollectionInvalid, OperationFailure
+from pymongo.errors import OperationFailure
 from moviepy.editor import VideoFileClip
 from config import fault_options
 from streamlit import session_state as ss
@@ -75,9 +75,9 @@ with mission_container:
         st.markdown('Type in mission name/description. Should be done in snake case, and cannot\
                 start with a number. It will be used as a collection name.')
         mission_name = st.text_input('Mission Name/Description', key = 'mission_name')
-        ss.mission = mission_name
         mission_set = st.form_submit_button('Set Mission')
         if mission_set and mission_name != '':
+            ss.mission = mission_name
             st.success('Mission Set!')
 
 
@@ -115,9 +115,26 @@ with col1:
             db[mission_name].insert_one(doc)
 
 with col2:
+    # if preview_table is not None:
+    list = {
+        'Datetime': [],
+        'Fault Type': []
+    }
+
+    list_of_collections = db.list_collection_names() 
+    st.subheader('')
     st.subheader('Entries')
-    preview_table = preview_db(ss.mission)
-    if preview_table is not None:
+    if ss.mission in list_of_collections:
+        data = db[ss.mission].find()
+
+        for entry in data:
+            list['Datetime'].append(f"{entry['date']} {entry['time']}")
+            list['Fault Type'].append(entry['type'])
+
+        df = pd.DataFrame(list)
+        df = df.sort_values(by='Datetime',ascending=False)
+
+        preview_table = df
         st.table(preview_table)
     else:
         st.write('No entries found')

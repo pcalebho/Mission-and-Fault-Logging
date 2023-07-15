@@ -12,3 +12,10 @@ fault_options = (
     'Other'
 )
 
+unit_options = (
+    '3.3',
+    '4.1',
+    '4.2',
+    '4.3'
+)
+

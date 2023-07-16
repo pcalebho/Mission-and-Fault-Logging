@@ -6,16 +6,16 @@ from pymongo import MongoClient
 from moviepy.editor import VideoFileClip
 from config import fault_options, unit_options
 from streamlit import session_state as ss
+from bson.objectid import ObjectId
 
 @st.cache_resource()
 def init_connection():
     return MongoClient(**st.secrets["mongo"])
     
-
 client = init_connection()
 
 #connect to ultra database
-db = client.ultra
+db = client.project
 mission_collection = db.missions
 faults_collection = db.faults   
 
@@ -35,12 +35,23 @@ if 'date' not in ss:
 if 'time' not in ss:
     ss.time = datetime.datetime.now().time().strftime('%H:%M:%S')
 
-if 'mission' not in ss:
-    ss.mission = ''
+if 'mission_id' not in ss:
+    ss.mission_id = ''
 
 if 'unit' not in ss:
     ss.unit = unit_options[0]
 
+if 'mission_description' not in ss:
+    ss.mission_description = ''
+
+if 'mission_submit' not in ss:
+    ss.mission_submit = False
+
+if 'btn_new_mission' not in ss:
+    ss.btn_new_mission = False
+
+if 'btn_existing_mission' not in ss:
+    ss.btn_existing_mission = False
 
 css = r'''
     <style>
@@ -51,25 +62,45 @@ st.markdown(css, unsafe_allow_html=True)
 
 
 with mission_container:
-    st.subheader('1. Set Mission Description')
-    with st.form(key = 'mission_set'):
-        unit = st.radio('Robot unit',unit_options, key ='unit')
-        st.markdown('Type in mission name/description. Should be done in snake case, and cannot\
-                start with a number. It will be used as a collection name.')
-        mission_description = st.text_input('Mission Description', key = 'mission_name')
-        mission_set = st.form_submit_button('Set Mission')
-        if mission_set and mission_description != '':
-            ss.mission = mission_description
-            st.success('Mission Set!')
+    st.subheader('1. Set Missions')
+    mission_selection_options = ('Create new mission', 'Use exisitng mission')
+    choice = st.radio('Mission selection', options=mission_selection_options)
+
+    if choice == mission_selection_options[0]:
+        with st.form(key = 'mission_set'):
+            st.radio('Robot unit',unit_options, key ='unit')
+            st.markdown('Type in mission name/description. Should be done in snake case, and cannot\
+                    start with a number. It will be used as a collection name.')
+            st.text_input('Mission Description', key = 'mission_description')
+            mission_set = st.form_submit_button('Set Mission')
+            if mission_set:
+                mission_document = {
+                    'unit': ss.unit,
+                    'description': ss.mission_description,
+                    'time': datetime.datetime.now(tz=datetime.timezone.utc)
+                }
+                ss.mission_id = mission_collection.insert_one(mission_document).inserted_id
+                st.success('Mission Set!')
+    else:
+        ss.mission_submit = True
+        mission_options = []
+        mission_documents = mission_collection.find()
+        for mission in mission_documents:
+            mission_options.append(
+                f"Unit:{mission['unit']}, Description:{mission['description']}, \
+                    Datetime:{mission['datetime']}"
+            )
+        st.selectbox('Select Mission', options= mission_options)
 
 
 #Entry addition
 with col1:
     st.subheader('2. Create Entries')
     disabled = False
-    if mission_description == "":
+    if ss.mission_id == '':
         disabled = True
-
+    
+    ss.mission_id
 
     str_time = ''
     if st.button('Get datetime', key = 'get_time_btn'):
@@ -88,6 +119,7 @@ with col1:
 
         if submitted:
             doc = {
+                "mission_id": ObjectId(ss.mission_id),
                 "unit": ss.unit,
                 "exception": exception, 
                 "type": type, 
@@ -95,7 +127,7 @@ with col1:
                 "time": ss.time, 
                 "date": str(ss.date)
             }
-            db[mission_description].insert_one(doc)
+            faults_collection.insert_one(doc)
 
 with col2:
     # if preview_table is not None:
@@ -104,26 +136,22 @@ with col2:
         'Fault Type': []
     }
 
-    list_of_collections = db.list_collection_names() 
-    st.subheader('Entries (recent 10)')
-    if ss.mission in list_of_collections:
-        data = db[ss.mission].find()
+    data = faults_collection.find({'mission_id': ss.mission_id})
 
-        for entry in data:
-            list['Datetime'].append(f"{entry['date']} {entry['time']}")
-            list['Fault Type'].append(entry['type'])
+    for entry in data:
+        list['Datetime'].append(f"{entry['date']} {entry['time']}")
+        list['Fault Type'].append(entry['type'])
 
-        df = pd.DataFrame(list)
-        df = df.set_index('Datetime')
-        df = df.sort_values(by='Datetime',ascending=False)
-        df.index.name = 'Datetime'
-        preview_table = df
-        if df.shape[0] >= 11:
-            st.table(preview_table.head(10))
-        else:
-            st.table(preview_table)
-        
+    df = pd.DataFrame(list)
+    df = df.set_index('Datetime')
+    df = df.sort_values(by='Datetime',ascending=False)
+    df.index.name = 'Datetime'
+    preview_table = df
+    if df.shape[0] >= 11:
+        st.table(preview_table.head(10))
     else:
+        st.table(preview_table)
+        
         st.write('No entries found')
 
 with upload_container:

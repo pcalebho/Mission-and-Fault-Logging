@@ -248,6 +248,7 @@ with upload_container:
                     clip_end = seconds+5
                     clip = raw_clip.subclip(clip_start,clip_end)
                     clip.write_videofile(filename=f"clips/{fault['_id']}.mp4",codec='libx264')
+                    faults_collection.find_one_and_update({"_id": ObjectId(fault['_id'])}, {"$set":{"hasVideo":True}})
                     percent_complete += step
                     i += 1
                     if i != 4:

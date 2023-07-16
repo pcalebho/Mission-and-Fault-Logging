@@ -15,45 +15,40 @@ def init_connection():
     
 client = init_connection()
 
-#connect to ultra database
+# connect to mongodb database and collections
 db = client.project
 mission_collection = db.missions
 faults_collection = db.faults   
 
-#Create containers
+# Create streamlit containers. 
+# Streamlit containers help separate the widgets within the webpage.
 mission_container = st.container()
 col1, col2 = st.columns(spec=[.6, .4])
 upload_container = st.container()
 
-mission_description = ""
 
-if 'fault_type' not in st.session_state:
+# This code iniatilizes necessary session state variables, so the API
+# does not throw an error.
+if 'fault_type' not in ss:
     st.session_state.fault_type = fault_options[0]
-
 if 'date' not in ss:
     ss.date = datetime.datetime.now().date()
-
 if 'time' not in ss:
     ss.time = datetime.datetime.now().time().strftime('%H:%M:%S')
-
 if 'mission_id' not in ss:
     ss.mission_id = ''
-
 if 'unit' not in ss:
     ss.unit = unit_options[0]
-
 if 'mission_description' not in ss:
     ss.mission_description = ''
-
 if 'mission_submit' not in ss:
     ss.mission_submit = False
-
 if 'btn_new_mission' not in ss:
     ss.btn_new_mission = False
-
 if 'btn_existing_mission' not in ss:
     ss.btn_existing_mission = False
 
+# The statements use css to remove borders from the streamlit form widgets.
 css = r'''
     <style>
         [data-testid="stForm"] {border: 0px}
@@ -79,12 +74,13 @@ def format_mission_options(id):
     
     doc = mission_collection.find_one({'_id': ObjectId(id)})
     if doc is not None:
-        return f"Unit: {doc['unit']} | Description: {doc['description']} | Time: {doc['time']}"
+        return f"Unit: {doc['unit']} | Description: {doc['description']} \
+            | Time: {doc['time']}"
     else:
         return ""
     
 def is_valid_time_format(time_string):
-    '''Checks if a time_string is a valid time'''
+    '''Checks if a time_string is a valid format or value'''
     pattern = r'^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$'
     match = re.match(pattern, time_string)
     
@@ -98,34 +94,41 @@ def is_valid_time_format(time_string):
     
     return False
 
-
+# This is used for setting the mission for the fault logging.
 with mission_container:
     st.subheader('1. Set Missions')
     mission_selection_options = ('Create new mission', 'Use existing mission')
     choice = st.radio('Mission selection', options=mission_selection_options)
 
+    # Presents form to create a new mission.
+    # Submitting form creates a new document in the mission collection
     if choice == mission_selection_options[0]:
         with st.form(key = 'mission_set'):
             st.radio('Robot unit',unit_options, key ='unit')
-            st.markdown('Type in mission name/description. Should be done in snake case, and cannot\
-                    start with a number. It will be used as a collection name.')
+            st.markdown('Type in mission description.')
             st.text_input('Mission Description', key = 'mission_description')
             mission_set = st.form_submit_button('Set Mission')
             if mission_set:
+                # Uses the session state of widgets for the inserted document
                 mission_document = {
                     'unit': ss.unit,
                     'description': ss.mission_description,
                     'time': datetime.datetime.now(tz=datetime.timezone.utc)
                 }
-                ss.mission_id = mission_collection.insert_one(mission_document).inserted_id
+                ss.mission_id = \
+                    mission_collection.insert_one(mission_document).inserted_id
                 st.success('Mission Set!')
     else:
+        # Find mission id's in the mission collection, and collect into list.
         mission_options = []
         mission_documents = mission_collection.find()
         for mission in mission_documents:
             mission_options.append(
                 f"{mission['_id']}"
             )
+
+        # Mission ID's are placed in selectbox options. Format function transforms
+        # ID into something more meaningful
         ss.mission_id = st.selectbox(
             'Select Mission', 
             options= mission_options,
@@ -133,13 +136,16 @@ with mission_container:
         )
 
 
-#Entry addition
+# This is the fault entry form column
 with col1:
     st.subheader('2. Create Entries')
+
+    # This code is used for disabling the form submit button if the mission is not set.
     disabled = False
     if ss.mission_id == '':
         disabled = True
 
+    # Display the 'set mission.' If there is no mission set, print let em know
     if ss.mission_id != '':
         mission_fields = mission_collection.find_one({'_id': ObjectId(ss.mission_id)})
         if mission_fields is not None:
@@ -149,7 +155,7 @@ with col1:
     else:
         st.text('No mission set')
 
-    str_time = ''
+    # Button to get datetime at button press 
     if st.button('Get datetime', key = 'get_time_btn'):
         raw_time = datetime.datetime.now()
         ss.time = raw_time.time().strftime('%H:%M:%S')
@@ -177,12 +183,12 @@ with col1:
             faults_collection.insert_one(doc)
 
 with col2:
-    # if preview_table is not None:
     list = {
         'Datetime': [],
         'Fault Type': []
     }
 
+    # Display a table of the last 10 faults in a mission.
     if ss.mission_id != '':
         data = faults_collection.find({'mission_id': ObjectId(ss.mission_id)})
 
@@ -234,10 +240,11 @@ with upload_container:
                 num_faults = faults_collection.count_documents({'mission_id': ObjectId(ss.mission_id)})
                 step = 1.0/num_faults
                 
-                i = 1
-                progress_text = f"Generating Clips ({i}/3)"
+                clip_i = 1
+                progress_text = f"Generating Clips ({clip_i}/3)"
                 progress_bar = st.progress(0, text=progress_text)
                 percent_complete = 0
+
                 for fault in fault_list:
                     fault_datetime = parse_datetime_string(f"{fault['date']} {fault['time']}")
                     time_delta = fault_datetime-video_start
@@ -250,9 +257,9 @@ with upload_container:
                     clip.write_videofile(filename=f"clips/{fault['_id']}.mp4",codec='libx264')
                     faults_collection.find_one_and_update({"_id": ObjectId(fault['_id'])}, {"$set":{"hasVideo":True}})
                     percent_complete += step
-                    i += 1
-                    if i != 4:
-                        progress_text = f"Generating Clips ({i}/3)"
+                    clip_i += 1
+                    if clip_i != 4:
+                        progress_text = f"Generating Clips ({clip_i}/3)"
                     else:
                         progress_text = 'Complete!'
                     progress_bar.progress(percent_complete, text=progress_text)

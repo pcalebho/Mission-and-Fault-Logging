@@ -13,7 +13,7 @@ client = init_connection()
 if 'query' not in ss:
     ss.query = {} 
 
-#connect to ultra database
+#connect to database
 db = client.project
 mission_collection = db.missions
 faults_collection = db.faults

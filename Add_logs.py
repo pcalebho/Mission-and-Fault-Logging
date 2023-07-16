@@ -61,6 +61,17 @@ css = r'''
 st.markdown(css, unsafe_allow_html=True)
 
 
+def format_mission_options(id):
+    '''Converts ObjectId's to readable title'''
+    if id == '':
+        return ""
+    
+    doc = mission_collection.find_one({'_id': ObjectId(id)})
+    if doc is not None:
+        return f"Unit: {doc['unit']} | Description: {doc['description']} | Time: {doc['time']}"
+    else:
+        return ""
+
 with mission_container:
     st.subheader('1. Set Missions')
     mission_selection_options = ('Create new mission', 'Use exisitng mission')
@@ -82,15 +93,21 @@ with mission_container:
                 ss.mission_id = mission_collection.insert_one(mission_document).inserted_id
                 st.success('Mission Set!')
     else:
-        ss.mission_submit = True
         mission_options = []
         mission_documents = mission_collection.find()
         for mission in mission_documents:
             mission_options.append(
-                f"Unit:{mission['unit']}, Description:{mission['description']}, \
-                    Datetime:{mission['datetime']}"
+                f"{mission['_id']}"
             )
-        st.selectbox('Select Mission', options= mission_options)
+        ss.mission_id = st.selectbox(
+            'Select Mission', 
+            options= mission_options,
+            format_func=format_mission_options
+        )
+        # mission_set = st.form_submit_button('Set Mission')
+        # if mission_set:
+        #     ss.mission_id = mission_collection.insert_one(mission_document).inserted_id
+        #     st.success('Mission Set!')
 
 
 #Entry addition
@@ -100,7 +117,7 @@ with col1:
     if ss.mission_id == '':
         disabled = True
     
-    ss.mission_id
+    st.text('Adding to this mission:\n' + format_mission_options(ss.mission_id))
 
     str_time = ''
     if st.button('Get datetime', key = 'get_time_btn'):
@@ -114,7 +131,7 @@ with col1:
         date = st.date_input('Date', key = 'date', value = ss.date)
         time = st.text_input('Time', key = 'time', value= ss.time, max_chars=8, help= 'format (HH\:MM\:SS)')
         type = st.selectbox('Fault Type', options=fault_options, key = 'fault_type')
-        description = st.text_input('Description of fault and what led up to it.')
+        description = st.text_area('Description of fault and what led up to it.')
         submitted = st.form_submit_button('Add', disabled=disabled) 
 
         if submitted:
@@ -136,23 +153,25 @@ with col2:
         'Fault Type': []
     }
 
-    data = faults_collection.find({'mission_id': ss.mission_id})
+    if ss.mission_id != '':
+        data = faults_collection.find({'mission_id': ObjectId(ss.mission_id)})
 
-    for entry in data:
-        list['Datetime'].append(f"{entry['date']} {entry['time']}")
-        list['Fault Type'].append(entry['type'])
+        for entry in data:
+            list['Datetime'].append(f"{entry['date']} {entry['time']}")
+            list['Fault Type'].append(entry['type'])
 
-    df = pd.DataFrame(list)
-    df = df.set_index('Datetime')
-    df = df.sort_values(by='Datetime',ascending=False)
-    df.index.name = 'Datetime'
-    preview_table = df
-    if df.shape[0] >= 11:
-        st.table(preview_table.head(10))
+        df = pd.DataFrame(list)
+        df = df.set_index('Datetime')
+        df = df.sort_values(by='Datetime',ascending=False)
+        df.index.name = 'Datetime'
+        preview_table = df
+        if df.shape[0] >= 11:
+            st.table(preview_table.head(10))
+        else:
+            st.table(preview_table)
     else:
-        st.table(preview_table)
+        st.write('No entries found.')
         
-        st.write('No entries found')
 
 with upload_container:
     #create cache folder if it does not exist

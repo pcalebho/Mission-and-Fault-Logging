@@ -10,6 +10,13 @@ from streamlit import session_state as ss
 from bson.objectid import ObjectId
 
 @st.cache_resource()
+# Add this file to connect to your database
+# ./streamlit/secrets.toml
+# [mongo]
+# host = "localhost"
+# port = 27017
+# username = ""
+# password = ""
 def init_connection():
     return MongoClient(**st.secrets["mongo"])
     
@@ -210,15 +217,13 @@ with col2:
         
 
 with upload_container:
-    #create cache folder if it does not exist
+    #create folders if they does not exist
     if not os.path.isdir('.cache'):
         os.mkdir('.cache')
-
     if not os.path.isdir('clips'):
         os.mkdir('clips')
 
     FILE_OUTPUT = '.cache/output.mp4'
-
 
     st.subheader('3. Upload Video')
     with st.form(key = 'clip_generator'):
@@ -255,11 +260,14 @@ with upload_container:
                     clip_end = seconds+5
                     clip = raw_clip.subclip(clip_start,clip_end)
                     clip.write_videofile(filename=f"clips/{fault['_id']}.mp4",codec='libx264')
-                    faults_collection.find_one_and_update({"_id": ObjectId(fault['_id'])}, {"$set":{"hasVideo":True}})
+                    faults_collection.find_one_and_update(
+                        {"_id": ObjectId(fault['_id'])}, 
+                        {"$set":{"hasVideo":True}}
+                    )
                     percent_complete += step
                     clip_i += 1
                     if clip_i != 4:
-                        progress_text = f"Generating Clips ({clip_i}/3)"
+                        progress_text = f"Generating Clips ({clip_i}/{num_faults})"
                     else:
                         progress_text = 'Complete!'
                     progress_bar.progress(percent_complete, text=progress_text)

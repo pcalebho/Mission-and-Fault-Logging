@@ -5,6 +5,13 @@ from bson.objectid import ObjectId
 from streamlit import session_state as ss
 
 @st.cache_resource()
+# Add this file to connect to your database
+# ./streamlit/secrets.toml
+# [mongo]
+# host = "localhost"
+# port = 27017
+# username = ""
+# password = ""
 def init_connection():
     return MongoClient(**st.secrets["mongo"])
 

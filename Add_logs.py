@@ -2,6 +2,7 @@ import streamlit as st
 import datetime
 import pandas as pd
 import os
+import re
 from pymongo import MongoClient
 from moviepy.editor import VideoFileClip
 from config import fault_options, unit_options
@@ -61,6 +62,16 @@ css = r'''
 st.markdown(css, unsafe_allow_html=True)
 
 
+def parse_datetime_string(datetime_string):
+    '''Converts datetime string into a datetime object'''
+    format = '%Y-%m-%d %H:%M:%S'
+    try:
+        parsed_datetime = datetime.datetime.strptime(datetime_string, format)
+        return parsed_datetime
+    except ValueError:
+        raise ValueError('Invalid datetime string format.')
+
+
 def format_mission_options(id):
     '''Converts ObjectId's to readable title'''
     if id == '':
@@ -71,10 +82,26 @@ def format_mission_options(id):
         return f"Unit: {doc['unit']} | Description: {doc['description']} | Time: {doc['time']}"
     else:
         return ""
+    
+def is_valid_time_format(time_string):
+    '''Checks if a time_string is a valid time'''
+    pattern = r'^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$'
+    match = re.match(pattern, time_string)
+    
+    if match:
+        hours = int(match.group(1))
+        minutes = int(match.group(2))
+        seconds = int(match.group(3))
+        
+        if hours <= 23 and minutes <= 59 and seconds <= 59:
+            return True
+    
+    return False
+
 
 with mission_container:
     st.subheader('1. Set Missions')
-    mission_selection_options = ('Create new mission', 'Use exisitng mission')
+    mission_selection_options = ('Create new mission', 'Use existing mission')
     choice = st.radio('Mission selection', options=mission_selection_options)
 
     if choice == mission_selection_options[0]:
@@ -104,10 +131,6 @@ with mission_container:
             options= mission_options,
             format_func=format_mission_options
         )
-        # mission_set = st.form_submit_button('Set Mission')
-        # if mission_set:
-        #     ss.mission_id = mission_collection.insert_one(mission_document).inserted_id
-        #     st.success('Mission Set!')
 
 
 #Entry addition
@@ -116,8 +139,15 @@ with col1:
     disabled = False
     if ss.mission_id == '':
         disabled = True
-    
-    st.text('Adding to this mission:\n' + format_mission_options(ss.mission_id))
+
+    if ss.mission_id != '':
+        mission_fields = mission_collection.find_one({'_id': ObjectId(ss.mission_id)})
+        if mission_fields is not None:
+            st.text('Unit: ' + mission_fields['unit'])
+            st.text('Description: ' + mission_fields['description'])
+            st.text('Time: ' + str(mission_fields['time']))
+    else:
+        st.text('No mission set')
 
     str_time = ''
     if st.button('Get datetime', key = 'get_time_btn'):
@@ -178,28 +208,52 @@ with upload_container:
     if not os.path.isdir('.cache'):
         os.mkdir('.cache')
 
-    FILE_OUTPUT = '.cache/output.mp4'
+    if not os.path.isdir('clips'):
+        os.mkdir('clips')
 
-    # Checks and deletes the output file
-    # You cant have a existing file or it will through an error
-    # if os.path.isfile(FILE_OUTPUT):
-    #     os.remove(FILE_OUTPUT)
+    FILE_OUTPUT = '.cache/output.mp4'
 
 
     st.subheader('3. Upload Video')
-    video = st.file_uploader('Upload', type = ['mp4'])
-    if video is not None and ss.mission_id != '':
-        video_bytes = video.getvalue()
-
-         # opens the file 'output.mp4' which is accessable as 'out_file'
-        with open(FILE_OUTPUT, "wb") as out_file:  # open for [w]riting as [b]inary
-            out_file.write(video_bytes)
-
-        raw_clip = VideoFileClip(FILE_OUTPUT)
-
+    with st.form(key = 'clip_generator'):
+        video = st.file_uploader('Upload', type = ['mp4'])
         start_date_video = st.date_input('Starting date of video')
         time_start_video = st.text_input('Starting time of uploaded video (HH\:MM\:SS)')
-        if st.button('Create clips'):
-            fault_list = faults_collection.find({'_id': ObjectId(ss.mission_id)})
-            for fault in fault_list:
-                raw_clip.subclip()
+        video_submit = st.form_submit_button('Submit')
+        if video_submit:
+            if video is not None and is_valid_time_format(time_start_video):
+                video_bytes = video.getvalue()
+
+                # opens the file 'output.mp4' which is accessable as 'out_file'
+                with open(FILE_OUTPUT, "wb") as out_file:  # open for [w]riting as [b]inary
+                    out_file.write(video_bytes)
+
+                raw_clip = VideoFileClip(FILE_OUTPUT)        
+                video_start = parse_datetime_string(str(start_date_video) + ' ' + time_start_video)
+                fault_list = faults_collection.find({'mission_id': ObjectId(ss.mission_id)})
+                num_faults = faults_collection.count_documents({'mission_id': ObjectId(ss.mission_id)})
+                step = 1.0/num_faults
+                
+                i = 1
+                progress_text = f"Generating Clips ({i}/3)"
+                progress_bar = st.progress(0, text=progress_text)
+                percent_complete = 0
+                for fault in fault_list:
+                    fault_datetime = parse_datetime_string(f"{fault['date']} {fault['time']}")
+                    time_delta = fault_datetime-video_start
+                    seconds = time_delta.total_seconds()
+                    clip_start = seconds-10
+                    if clip_start < 0:
+                        clip_start = 0
+                    clip_end = seconds+5
+                    clip = raw_clip.subclip(clip_start,clip_end)
+                    clip.write_videofile(filename=f"clips/{fault['_id']}.mp4",codec='libx264')
+                    percent_complete += step
+                    i += 1
+                    if i != 4:
+                        progress_text = f"Generating Clips ({i}/3)"
+                    else:
+                        progress_text = 'Complete!'
+                    progress_bar.progress(percent_complete, text=progress_text)
+            else:
+                st.error('Invalid inputs')

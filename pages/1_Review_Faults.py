@@ -47,7 +47,7 @@ def format_fault_options(id):
     else:
         return ""
     
-
+st.title('Review faults')
 review_options = ('By Mission', 'By Fault Type')
 filter = st.radio('Choose filter', options=review_options)
 

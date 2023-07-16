@@ -28,6 +28,17 @@ def format_mission_options(id):
         return f"Unit: {doc['unit']} | Description: {doc['description']} | Time: {doc['time']}"
     else:
         return ""
+
+def format_fault_options(id):
+    if id == '':
+        return ''
+    
+    doc = faults_collection.find_one({'_id': ObjectId(id)})
+    if doc is not None:
+        return f"Unit: {doc['unit']} | Description: {doc['description']} \
+            | Time: {doc['time']} | Date: {doc['date']}"
+    else:
+        return ""
     
 
 review_options = ('By Mission', 'By Fault Type')
@@ -55,7 +66,7 @@ for fault in fault_documents:
         f"{fault['_id']}"
     )
 
-fault_id = st.selectbox(label='Choose fault', options=faults)
+fault_id = st.selectbox(label='Choose fault', options=faults,format_func=format_fault_options)
 if fault_id is not None:
     try:
         video_file = open(f"clips/{fault_id}.mp4", 'rb')

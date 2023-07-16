@@ -42,13 +42,13 @@ if filter == 'By Mission':
             f"{mission['_id']}"
         )
     st.selectbox(label= 'Select Mission', options=mission_options, format_func=format_mission_options, key = 'mission_id')
-    ss.query = {'mission_id': ss.mission_id}
+    ss.query = {'mission_id': ObjectId(ss.mission_id)}
 elif filter == 'By Fault Type':
     type = st.selectbox(label= 'Fault type', options = fault_options)
     ss.query = {'type': type}
 
 faults = []
-fault_documents = faults_collection.find(ss.query)
+fault_documents = faults_collection.find({'$and':[ss.query, {'hasVideo': True}]})
 
 for fault in fault_documents:
     faults.append(
@@ -57,6 +57,9 @@ for fault in fault_documents:
 
 fault_id = st.selectbox(label='Choose fault', options=faults)
 if fault_id is not None:
-    video_file = open(f"{fault_id}.mp4", 'rb')
-    video_bytes = video_file.read()
-    st.video(video_bytes)
+    try:
+        video_file = open(f"clips/{fault_id}.mp4", 'rb')
+        video_bytes = video_file.read()
+        st.video(video_bytes)
+    except Exception:
+        st.error('No video found.')

@@ -182,13 +182,13 @@ with upload_container:
 
     # Checks and deletes the output file
     # You cant have a existing file or it will through an error
-    if os.path.isfile(FILE_OUTPUT):
-        os.remove(FILE_OUTPUT)
+    # if os.path.isfile(FILE_OUTPUT):
+    #     os.remove(FILE_OUTPUT)
 
 
     st.subheader('3. Upload Video')
     video = st.file_uploader('Upload', type = ['mp4'])
-    if video is not None and ss.mission != '':
+    if video is not None and ss.mission_id != '':
         video_bytes = video.getvalue()
 
          # opens the file 'output.mp4' which is accessable as 'out_file'
@@ -197,4 +197,9 @@ with upload_container:
 
         raw_clip = VideoFileClip(FILE_OUTPUT)
 
-        st.button('Create clips')
+        start_date_video = st.date_input('Starting date of video')
+        time_start_video = st.text_input('Starting time of uploaded video (HH\:MM\:SS)')
+        if st.button('Create clips'):
+            fault_list = faults_collection.find({'_id': ObjectId(ss.mission_id)})
+            for fault in fault_list:
+                raw_clip.subclip()

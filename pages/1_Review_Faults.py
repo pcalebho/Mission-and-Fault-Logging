@@ -1,6 +1,6 @@
 import streamlit as st
 from pymongo import MongoClient
-from config import fault_options
+from config import FAULT_OPTIONS
 from bson.objectid import ObjectId
 from streamlit import session_state as ss
 
@@ -62,7 +62,7 @@ if filter == 'By Mission':
     st.selectbox(label= 'Select Mission', options=mission_options, format_func=format_mission_options, key = 'mission_id')
     ss.query = {'mission_id': ObjectId(ss.mission_id)}
 elif filter == 'By Fault Type':
-    type = st.selectbox(label= 'Fault type', options = fault_options)
+    type = st.selectbox(label= 'Fault type', options = FAULT_OPTIONS)
     ss.query = {'type': type}
 
 faults = []

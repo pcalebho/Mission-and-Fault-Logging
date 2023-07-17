@@ -5,7 +5,7 @@ import os
 import re
 from pymongo import MongoClient
 from moviepy.editor import VideoFileClip
-from config import fault_options, unit_options
+from config import FAULT_OPTIONS, UNIT_OPTIONS
 from streamlit import session_state as ss
 from bson.objectid import ObjectId
 
@@ -37,7 +37,7 @@ upload_container = st.container()
 # This code iniatilizes necessary session state variables, so the API
 # does not throw an error.
 if 'fault_type' not in ss:
-    st.session_state.fault_type = fault_options[0]
+    st.session_state.fault_type = FAULT_OPTIONS[0]
 if 'date' not in ss:
     ss.date = datetime.datetime.now().date()
 if 'time' not in ss:
@@ -45,7 +45,7 @@ if 'time' not in ss:
 if 'mission_id' not in ss:
     ss.mission_id = ''
 if 'unit' not in ss:
-    ss.unit = unit_options[0]
+    ss.unit = UNIT_OPTIONS[0]
 if 'mission_description' not in ss:
     ss.mission_description = ''
 if 'mission_submit' not in ss:
@@ -111,7 +111,7 @@ with mission_container:
     # Submitting form creates a new document in the mission collection
     if choice == mission_selection_options[0]:
         with st.form(key = 'mission_set'):
-            st.radio('Robot unit',unit_options, key ='unit')
+            st.radio('Robot unit',UNIT_OPTIONS, key ='unit')
             st.markdown('Type in mission description.')
             st.text_input('Mission Description', key = 'mission_description')
             mission_set = st.form_submit_button('Set Mission')
@@ -173,7 +173,7 @@ with col1:
         exception = st.radio(label='Exception/Non-exception Fault', options=('Non-exception','Exception'))        
         date = st.date_input('Date', key = 'date', value = ss.date)
         time = st.text_input('Time', key = 'time', value= ss.time, max_chars=8, help= 'format (HH\:MM\:SS)')
-        type = st.selectbox('Fault Type', options=fault_options, key = 'fault_type')
+        type = st.selectbox('Fault Type', options=FAULT_OPTIONS, key = 'fault_type')
         description = st.text_area('Description of fault and what led up to it.')
         submitted = st.form_submit_button('Add', disabled=disabled) 
 

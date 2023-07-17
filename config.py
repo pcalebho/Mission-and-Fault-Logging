@@ -1,21 +1,18 @@
-fault_options = (
-    'Failed Pick',
-    'Missed Pick',
-    'Incomplete Pick',
-    'Carriage Servo Overload',
-    'AB Jam',
-    'MB2 Jam',
-    'MB1 Jam',
-    'EB Jam',
-    'Case dropped',
-    'Fallen Case',
-    'Other'
+'''
+
+'''
+FAULT_OPTIONS = (
+    'Fault A',
+    'Fault B',
+    'Fault C',
+    'Fault D',
+    'Fault E'
 )
 
-unit_options = (
-    '3.3',
-    '4.1',
-    '4.2',
-    '4.3'
+UNIT_OPTIONS = (
+    'Unit 1',
+    'Unit 2',
+    'Unit 3',
+    'Unit 4'
 )
 

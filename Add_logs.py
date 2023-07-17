@@ -246,10 +246,10 @@ with upload_container:
                 step = 1.0/num_faults
                 
                 clip_i = 1
-                progress_text = f"Generating Clips ({clip_i}/3)"
+                progress_text = f"Generating Clips ({clip_i}/{num_faults})"
                 progress_bar = st.progress(0, text=progress_text)
                 percent_complete = 0
-                
+
                 # Takes the uploaded video and makes a 15 second clip around the fault time.
                 # The video is downloaded to disk and named after the fault's objectid.
                 for fault in fault_list:
@@ -268,7 +268,7 @@ with upload_container:
                     )
                     percent_complete += step
                     clip_i += 1
-                    if clip_i != 4:
+                    if clip_i != num_faults+1:
                         progress_text = f"Generating Clips ({clip_i}/{num_faults})"
                     else:
                         progress_text = 'Complete!'

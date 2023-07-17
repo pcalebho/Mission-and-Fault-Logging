@@ -1,5 +1,5 @@
 '''
-
+Replace constants with correct options
 '''
 FAULT_OPTIONS = (
     'Fault A',

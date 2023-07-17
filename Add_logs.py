@@ -249,7 +249,9 @@ with upload_container:
                 progress_text = f"Generating Clips ({clip_i}/3)"
                 progress_bar = st.progress(0, text=progress_text)
                 percent_complete = 0
-
+                
+                # Takes the uploaded video and makes a 15 second clip around the fault time.
+                # The video is downloaded to disk and named after the fault's objectid.
                 for fault in fault_list:
                     fault_datetime = parse_datetime_string(f"{fault['date']} {fault['time']}")
                     time_delta = fault_datetime-video_start

@@ -16,7 +16,7 @@ st.subheader('Create a new mission...')
 display_local_gif('Mission_set_1_optimized.gif')
 st.divider()
 
-st.subheader('Or use an existing one')
+st.subheader('or use an existing one')
 display_local_gif('Add_existing_mission_2_optimized.gif')
 st.divider()
 

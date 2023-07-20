@@ -25,7 +25,7 @@ This is a simple CRUD-type web app and accomplishes the following:
 6. Run the app by typing this command into the terminal: `streamlit run Add_logs.py`
 
 ## How to Use
-
+Made a simple [streamlit webpage](https://tutorialfaultlog.streamlit.app/) to demonstrate.
 
 ## Extras
 ### Deploying

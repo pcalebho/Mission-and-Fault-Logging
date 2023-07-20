@@ -28,7 +28,7 @@ st.subheader('If you want to get the current time.')
 display_local_gif('Get_time_4.gif')
 st.divider()
 
-st.subheader('Create clips of all your ')
+st.subheader('Create clips of faults in mission')
 display_local_gif('Uploading_videos_5.gif')
 st.divider()
 

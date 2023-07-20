@@ -14,18 +14,23 @@ st.title('How to Use')
 
 st.subheader('Create a new mission...')
 display_local_gif('Mission_set_1_optimized.gif')
+st.divider()
 
 st.subheader('Or use an existing one')
 display_local_gif('Add_existing_mission_2_optimized.gif')
+st.divider()
 
 st.subheader('Add faults to your mission')
 display_local_gif('Add_fault_3_optimized.gif')
+st.divider()
 
 st.subheader('If you want to get the current time.')
 display_local_gif('Get_time_4.gif')
+st.divider()
 
-st.subheader('Create clips of all your ')
+st.subheader('Create clips of all faults in mission')
 display_local_gif('Uploading_videos_5.gif')
+st.divider()
 
 st.subheader('Review details of faults')
 display_local_gif('Review_faults_6_optimized.gif')
